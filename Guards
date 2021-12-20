@@ -1,0 +1,40 @@
+### Motivation
+
+Pattern match cases can accept guards to further refine the criteria for matching a case. Pattern guards appear after the pattern and consist of an expression following the `when` keyword. The grammar expresses this as `| PATTERN => EXPRESSION when EXPRESSION`. An example:
+```rescript
+switch person1 {
+| Teacher(_) => () // do nothing
+| Student({reportCard: {gpa}}) when gpa < 0.5 =>
+  Js.log("What's happening")
+| Student(_) =>
+  // fall-through, catch-all case
+  Js.log("Heyo")
+}
+```
+
+We inherited the `when` keyword from our ancestors Reason and Ocaml. This keyword is not ideal:
+1) It is not a keyword in JavaScript; you need to escape it in interop scenarios.
+2) `when` takes up a keyword and is only being used in one small part of the grammar. (Cost/benefit)
+3) Some people have trouble remembering the exact word, is it `when` or `where` etc.
+
+Given the above, we're planning to move towards a new syntax for guards on match cases by using the `if` keyword.
+```
+match-guard ::=
+  IF expr
+```
+
+Applied to the example above, this would give:
+```git
+- | Student({reportCard: {gpa}}) when gpa < 0.5 =>
++ | Student({reportCard: {gpa}}) if gpa < 0.5 =>
+```
+
+### Migration path
+1) Accept both `when` and `if` for case guards. Printer will output `if`. No breaking change.
+2) Remove support for parsing case guards with the `when` keyword. Show a nice error when the user tries to use `when` instead of `if`
+
+This PR implements `1)`
+
+### Prior art
+
+* [rust](https://doc.rust-lang.org/reference/expressions/match-expr.html#match-guards)
