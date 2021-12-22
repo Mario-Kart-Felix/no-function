@@ -1,0 +1,120 @@
+
+1. First scan all possible md devices events:
+
+# mdadm --examine /dev/sd[a-z] | egrep 'Event|/dev/sd'
+Or scan for all devices with detailed information about md raid UUID
+
+# mdadm --examine /dev/sd[a-z]
+mdadm examine command will try to check all available disks information and verify if they are part of any md raid.
+
+Example output:
+
+# mdadm --examine /dev/sd[a-z]
+
+/dev/sdb:
+Magic : a92b4efc
+Version : 0.90.00
+UUID : 08877d71:d7dc9c1b:16f3496b:a22042b7
+Creation Time : Wed Aug 31 14:19:18 2021
+Raid Level : raid5
+Used Dev Size : 586061696 (558.91 GiB 600.13 GB)
+Array Size : 2930308480 (2794.56 GiB 3000.64 GB)
+Raid Devices : 6
+Total Devices : 6
+Preferred Minor : 0
+
+Update Time : Wed Sep 21 11:33:48 2016
+State : clean
+Active Devices : 6
+Working Devices : 6
+Failed Devices : 0
+Spare Devices : 0
+Checksum : 153be7ed - correct
+Events : 202
+
+Layout : left-symmetric
+Chunk Size : 64K
+
+Number Major Minor RaidDevice State
+this 0 8 16 0 active sync /dev/sdb
+
+0 0 8 16 0 active sync /dev/sdb
+1 1 8 48 1 active sync /dev/sdd
+2 2 8 64 2 active sync /dev/sde
+3 3 8 80 3 active sync /dev/sdf
+4 4 8 96 4 active sync /dev/sdg
+5 5 8 112 5 active sync /dev/sdh
+So mdadm is able to find mdraid device with proper UUID of that md0 raid, UUID of md0 is: 08877d71:d7dc9c1b:16f3496b:a22042b7
+
+2. Compare that UUID with the one inside /etc/mdadm.conf:
+
+# cat /etc/mdadm.conf
+ARRAY /dev/md0 level=raid5 num-devices=6 metadata=0.90 spares=1 UUID=73560e25:92fb30cb:1c74ff07:ca1df0f7
+Both UUID don’t actually match.
+
+3. There is possibility to manually mount mdraid by giving each device as a part of md0 raid:
+
+# mdadm --assemble /dev/md0 /dev/sdb /dev/sdd /dev/sde /dev/sdf /dev/sdg /dev/sdh
+mdadm: /dev/md0 has been tarted with 6 drives.
+# ls -l /dev/md0
+brw-r----- 1 root disk 9, 0 November 23 11:18 /dev/md0
+# mdadm --detail /dev/md0
+/dev/md0:
+Version : 0.90
+Creation Time : Wed December 22 10:19:18 2021
+Raid Level : raid5
+Array Size : 2930308480 (2794.56 GiB 3000.64 GB)
+Used Dev Size : 586061696 (558.91 GiB 600.13 GB)
+Raid Devices : 6
+Total Devices : 6
+Preferred Minor : 0
+Persistence : Superblock is persistent
+
+Update Time : Wed December 21 11:33:48 2016
+State : clean
+Active Devices : 6
+Working Devices : 6
+Failed Devices : 0
+Spare Devices : 0
+
+Layout : left-symmetric
+Chunk Size : 64K
+
+UUID : 08877d71:d7dc9c1b:16f3496b:a22042b7
+Events : 0.202
+
+Number Major Minor RaidDevice State
+0 8 16 0 active sync /dev/sdb
+1 8 48 1 active sync /dev/sdd
+2 8 64 2 active sync /dev/sde
+3 8 80 3 active sync /dev/sdf
+4 8 96 4 active sync /dev/sdg
+5 8 112 5 active sync /dev/sdh
+4. Now md0 is visible, scan for pv and vg:
+
+# pvscan
+PV /dev/md0 VG vg_data lvm2 [2.73 TB / 546.56 GB free]
+Total: 1 [2.73 TB] / in use: 1 [2.73 TB] / in no VG: 0 [0 ]
+# vgscan
+Reading all physical volumes. This may take a while...
+Found volume group "vg_data" using metadata type lvm2
+5. Activate the vg now:
+
+# vgchange -a y
+6. Verify if LVs are now active and visible
+
+# lvscan
+ACTIVE '/dev/vg_data/lvm-admin' [200.00 GB] inherit
+ACTIVE '/dev/vg_data/lvm-backup' [2.00 TB] inherit
+7. Now run mount command
+
+# mount -a
+8. To actually fix wrong UUID in mdadm.conf execute below command:
+
+– Create backup of current mdadm.conf
+
+# cp /etc/mdadm.conf /etc/mdadm.conf.bak1
+– Now replace current config file with below command:
+
+# mdadm --examine --scan > /etc/mdadm.conf
+Above command will update /etc/mdadm.conf with proper raid config stanza.
