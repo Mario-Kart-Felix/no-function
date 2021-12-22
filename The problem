@@ -1,0 +1,23 @@
+
+THE GEEK DIARY
+“mdadm: No arrays found in config file” – error on running ‘mdadm –assemble –scan’
+
+The Problem
+After system has booted md0 is missing and all LVs used on top of md0 are not mounted
+
+# mount -a
+mount: special device /dev/mapper/vg_test-x0 does not exist
+mount: special device /dev/mapper/vg_test-y0 does not exist
+# cat /etc/mdadm.conf
+ARRAY /dev/md0 level=raid5 num-devices=6 metadata=0.90 spares=1 UUID=73560e25:92fb30cb:1c74ff07:ca1df0f7
+# cat /proc/mdstat
+Personalities :
+unused devices: [none]
+More data to show that /dev/md0 is missing:
+
+# mdadm --detail /dev/md0
+mdadm: cannot open /dev/md0: No such file or directory
+md0 is not visible at all, /var/log/messages does not hold any IO issues on local disks used by md0.
+
+The Solution
+The error is due to wrong settings in /etc/mdadm.conf. Follow the steps outlined below to resolve the issue:
